@@ -25,8 +25,6 @@ class AMQPConfiguration {
 
     @Bean
     RabbitAdmin rabbitAdmin(CachingConnectionFactory connectionFactory){
-        RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory)
-
         Queue queue = QueueBuilder
                 .nonDurable(QUEUE_NAME)
                 .autoDelete()
@@ -36,9 +34,11 @@ class AMQPConfiguration {
                 .durable(true)
                 .build()
 
-        rabbitAdmin.declareExchange(fanoutExchange)
-        rabbitAdmin.declareQueue(queue)
-        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(fanoutExchange))
+        new RabbitAdmin(connectionFactory).tap {
+            it.declareExchange(fanoutExchange)
+            it.declareQueue(queue)
+            it.declareBinding(BindingBuilder.bind(queue).to(fanoutExchange))
+        }
     }
 
     @Bean
