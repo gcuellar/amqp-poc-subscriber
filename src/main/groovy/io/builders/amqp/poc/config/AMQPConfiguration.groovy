@@ -15,28 +15,36 @@ import javax.annotation.PostConstruct
 @Configuration
 class AMQPConfiguration {
 
-    @Value('${rabbitmq.poc.exchange}')
-    String EXCHANGE_NAME
-    @Value('${rabbitmq.poc.alternate-exchange}')
-    String ALTERNATE_EXCHANGE_NAME
-    @Value('${rabbitmq.poc.alternate-queue}')
+    @Value('${rabbitmq.poc.topic-exchange}')
+    String TOPIC_EXCHANGE_NAME
+    @Value('${rabbitmq.poc.fanout-exchange}')
+    String FANOUT_EXCHANGE_NAME
+    @Value('${rabbitmq.poc.fanout-alternate-exchange}')
+    String FANOUT_ALTERNATE_EXCHANGE_NAME
+    @Value('${rabbitmq.poc.queue-alternate}')
     String ALTERNATE_QUEUE_NAME
+
     String QUEUE_NAME
 
     @PostConstruct
     void init(){
-        QUEUE_NAME = UUID.randomUUID().toString()+"@"+EXCHANGE_NAME
+        QUEUE_NAME = UUID.randomUUID().toString()+"@"+FANOUT_EXCHANGE_NAME
     }
 
     @Bean
     RabbitAdmin rabbitAdmin(CachingConnectionFactory connectionFactory){
-        FanoutExchange fanoutExchange = ExchangeBuilder
-                .fanoutExchange(EXCHANGE_NAME)
+        TopicExchange topicExchange = ExchangeBuilder
+                .topicExchange(TOPIC_EXCHANGE_NAME)
                 .durable(true)
-                .alternate(ALTERNATE_EXCHANGE_NAME)
+                .build()
+
+        FanoutExchange fanoutExchange = ExchangeBuilder
+                .fanoutExchange(FANOUT_EXCHANGE_NAME)
+                .durable(true)
+                .alternate(FANOUT_ALTERNATE_EXCHANGE_NAME)
                 .build()
         FanoutExchange fanoutAlternateExchange = ExchangeBuilder
-                .fanoutExchange(ALTERNATE_EXCHANGE_NAME)
+                .fanoutExchange(FANOUT_ALTERNATE_EXCHANGE_NAME)
                 .durable(true)
                 .build()
 
@@ -49,10 +57,12 @@ class AMQPConfiguration {
                 .build()
 
         new RabbitAdmin(connectionFactory).tap {
+            it.declareExchange(topicExchange)
             it.declareExchange(fanoutExchange)
             it.declareExchange(fanoutAlternateExchange)
             it.declareQueue(queue)
             it.declareQueue(alternateQueue)
+            it.declareBinding(BindingBuilder.bind(fanoutExchange).to(topicExchange).with("poc.event.#"))
             it.declareBinding(BindingBuilder.bind(queue).to(fanoutExchange))
             it.declareBinding(BindingBuilder.bind(alternateQueue).to(fanoutAlternateExchange))
         }
