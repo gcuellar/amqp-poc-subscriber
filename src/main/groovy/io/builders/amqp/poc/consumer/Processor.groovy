@@ -12,6 +12,6 @@ class Processor extends MessageListenerAdapter{
     }
 
     void receive(String message){
-        println "Message payload: " + message
+        println "Processor: Message payload ---> " + message
     }
 }
