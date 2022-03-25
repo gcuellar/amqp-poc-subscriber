@@ -1,18 +1,13 @@
 package io.builders.amqp.poc.consumer
 
-import org.springframework.amqp.core.AcknowledgeMode
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
+
+import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Component
 
 @Component
-class AlternateProcessor extends MessageListenerAdapter{
+class AlternateProcessor {
 
-    AlternateProcessor() {
-        super()
-        setDefaultListenerMethod("receive")
-        this.containerAckMode(AcknowledgeMode.MANUAL)
-    }
-
+    @RabbitListener(queues = '#{amqpConfiguration.ALTERNATE_QUEUE_NAME}')
     void receive(String message){
         println "Alternate processor: Message payload ---> " + message
     }
